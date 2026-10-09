@@ -9,6 +9,8 @@ import tools.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
+import java.util.Optional;
+import java.util.Set;
 
 @Repository
 public class DataRepository {
@@ -42,6 +44,18 @@ public class DataRepository {
 
     public List<MedicalRecord> findAllMedicalRecords() {
         return data.getMedicalRecords();
+    }
+
+    public List<Person> findPeopleByAddresses(Set<String> addresses) {
+        return data.getPeople().stream()
+                .filter(p -> addresses.contains(p.getAddress()))
+                .toList();
+    }
+
+    public Optional<MedicalRecord> findMedicalRecordByName(String firstName, String lastName) {
+        return data.getMedicalRecords().stream()
+                .filter(r -> r.getFirstName().equals(firstName) && r.getLastName().equals(lastName))
+                .findFirst();
     }
 
 

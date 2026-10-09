@@ -23,11 +23,10 @@ public class FireStationController {
     ){
         log.info("GET /firestation?stationNumber={}", stationNumber);
 
-//        FireStationCoverageDto response = service.getPersonsCoveredByStation(stationNumber);
-//
-//        log.info("ServiceResponse from controller: {} people, {} adults, {} children",
-//                response.people().size(), response.adultCount(), response.childCount());
-//        return response;
-        return null;
+        FireStationCoverageDto response = service.getPeopleCoveredByStation(stationNumber);
+
+        log.info("ServiceResponse from controller: {} people, {} adults, {} children",
+                response.people().size(), response.adultCount(), response.childCount());
+        return response;
     }
 }

@@ -19,7 +19,7 @@ public final class AgeCalculator {
     }
 
     // according to specs : a child is 18 or younger, so an adult is strictly older than 18
-    public static boolean isAdult(String birthdate, LocalDate referenceDate) {
-        return ageCalculation(birthdate, referenceDate) > 18;
+    public static boolean isAdult(int age) {
+        return age > 18;
     }
 }
