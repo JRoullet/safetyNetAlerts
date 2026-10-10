@@ -1,5 +1,6 @@
 package com.safetynetalerte.fr.safetynetAlerts.repository;
 
+import com.safetynetalerte.fr.safetynetAlerts.exception.MedicalRecordNotFoundException;
 import com.safetynetalerte.fr.safetynetAlerts.model.Firestation;
 import com.safetynetalerte.fr.safetynetAlerts.model.MedicalRecord;
 import com.safetynetalerte.fr.safetynetAlerts.model.Person;
@@ -9,7 +10,6 @@ import tools.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
-import java.util.Optional;
 import java.util.Set;
 
 @Repository
@@ -47,17 +47,17 @@ public class DataRepository {
     }
 
     public List<Person> findPeopleByAddresses(Set<String> addresses) {
-        return data.getPeople().stream()
+        return data.getPeople()
+                .stream()
                 .filter(p -> addresses.contains(p.getAddress()))
                 .toList();
     }
 
-    public Optional<MedicalRecord> findMedicalRecordByName(String firstName, String lastName) {
-        return data.getMedicalRecords().stream()
-                .filter(r -> r.getFirstName().equals(firstName) && r.getLastName().equals(lastName))
-                .findFirst();
+    public MedicalRecord findMedicalRecordByName(String firstName, String lastName) {
+    return data.getMedicalRecords()
+            .stream()
+            .filter(medicalRecord -> firstName.equals(medicalRecord.getFirstName()) && lastName.equals(medicalRecord.getLastName()))
+            .findFirst().orElseThrow(() -> new MedicalRecordNotFoundException(firstName, lastName));
     }
-
-
 
 }

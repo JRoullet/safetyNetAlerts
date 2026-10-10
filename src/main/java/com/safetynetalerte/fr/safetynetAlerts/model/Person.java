@@ -4,7 +4,6 @@ import lombok.Data;
 
 @Data
 public class Person {
-
     String firstName;
     String lastName;
     String address;
@@ -12,5 +11,4 @@ public class Person {
     String zip;
     String phone;
     String email;
-
 }

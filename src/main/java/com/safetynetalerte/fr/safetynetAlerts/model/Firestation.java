@@ -4,8 +4,6 @@ import lombok.Data;
 
 @Data
 public class Firestation {
-
     String address;
     int station;
-
 }

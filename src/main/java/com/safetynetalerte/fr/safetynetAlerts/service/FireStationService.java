@@ -2,6 +2,7 @@ package com.safetynetalerte.fr.safetynetAlerts.service;
 
 import com.safetynetalerte.fr.safetynetAlerts.dto.FireStationCoverageDto;
 import com.safetynetalerte.fr.safetynetAlerts.dto.PersonDto;
+import com.safetynetalerte.fr.safetynetAlerts.exception.FirestationNotFoundException;
 import com.safetynetalerte.fr.safetynetAlerts.model.MedicalRecord;
 import com.safetynetalerte.fr.safetynetAlerts.model.Person;
 import com.safetynetalerte.fr.safetynetAlerts.repository.DataRepository;
@@ -23,13 +24,22 @@ public class FireStationService {
         this.dataRepository = dataRepository;
     }
 
-    public FireStationCoverageDto getPeopleCoveredByStation(int stationNumber) {
+    //TODO manage exceptions throws
+    // Tester avec postman
+    // TU à implémenter (cas classiques pour la couverture de code)
+    // Tester le format du fichier d'entrée et les blocs du endpoint ci dessous
+    // Tests sur les enpoints (mockmvc)
+    public FireStationCoverageDto getPeopleCoveredByStation(int stationNumber)  {
+
         // retrieve addresses related to each firestation
         Set<String> addresses = dataRepository.findAllFirestations()
                 .stream()
                 .filter(fs -> fs.getStation() == stationNumber)
-                .map(Firestation -> Firestation.getAddress())
+                .map(fs -> fs.getAddress())
                 .collect(Collectors.toSet());
+        if (addresses.isEmpty()){
+            throw new FirestationNotFoundException(stationNumber);
+        }
         log.debug("Firestation {} : {} covered adresses", stationNumber, addresses.size());
 
         // retrieve covered people by address
@@ -48,12 +58,11 @@ public class FireStationService {
         // iteration on each person to count adults and children
         for (Person p : coveredPeople) {
             // retrieve individual medicalRecords
-            Optional<MedicalRecord> medicalRecord =
-                    dataRepository.findMedicalRecordByName(p.getFirstName(), p.getLastName());
+            MedicalRecord medicalRecord = dataRepository.findMedicalRecordByName(p.getFirstName(), p.getLastName());
 
             // age management
             LocalDate today = LocalDate.now();
-            String birthdate = medicalRecord.get().getBirthdate();
+            String birthdate = medicalRecord.getBirthdate();
             int age = AgeCalculator.ageCalculation(birthdate, today);
             boolean adult = AgeCalculator.isAdult(age);
             log.debug("FireStation {} : related file of {} {}, {} years old, {}",
