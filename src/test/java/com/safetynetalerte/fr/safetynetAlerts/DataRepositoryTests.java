@@ -1,11 +1,11 @@
 package com.safetynetalerte.fr.safetynetAlerts;
 
-import tools.jackson.core.JacksonException;
 import com.safetynetalerte.fr.safetynetAlerts.exception.MedicalRecordNotFoundException;
 import com.safetynetalerte.fr.safetynetAlerts.model.Person;
 import com.safetynetalerte.fr.safetynetAlerts.repository.DataRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import tools.jackson.core.JacksonException;
 import tools.jackson.databind.ObjectMapper;
 
 import java.io.IOException;
