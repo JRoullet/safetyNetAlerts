@@ -6,17 +6,18 @@ import com.safetynetalerte.fr.safetynetAlerts.model.MedicalRecord;
 import com.safetynetalerte.fr.safetynetAlerts.model.Person;
 import lombok.Data;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Data
 public class SafetyNetData {
 
     @JsonProperty("persons")
-    private List<Person> people;
+    private List<Person> people = new ArrayList<>();
 
-    private List<Firestation> firestations;
+    private List<Firestation> firestations = new ArrayList<>();
 
     @JsonProperty("medicalrecords")
-    private List<MedicalRecord> medicalRecords;
+    private List<MedicalRecord> medicalRecords = new ArrayList<>();
 
 }

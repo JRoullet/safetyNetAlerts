@@ -24,14 +24,13 @@ public class FireStationService {
         this.dataRepository = dataRepository;
     }
 
-    //TODO manage exceptions throws
+    //TODO
     // Tester avec postman
     // TU à implémenter (cas classiques pour la couverture de code)
-    // Tester le format du fichier d'entrée et les blocs du endpoint ci dessous
     // Tests sur les enpoints (mockmvc)
     public FireStationCoverageDto getPeopleCoveredByStation(int stationNumber)  {
 
-        // retrieve addresses related to each firestation
+        // récupération des adresses liées aux firestations
         Set<String> addresses = dataRepository.findAllFirestations()
                 .stream()
                 .filter(fs -> fs.getStation() == stationNumber)
@@ -42,31 +41,24 @@ public class FireStationService {
         }
         log.debug("Firestation {} : {} covered adresses", stationNumber, addresses.size());
 
-        // retrieve covered people by address
+        // récupération des personnes par addresse
         List<Person> coveredPeople = dataRepository.findPeopleByAddresses(addresses);
         log.debug("FireStation {} : {} found people", stationNumber, coveredPeople.size());
 
-        // filling in personDto fields to match expected return
+        // remplissage du dto pour matcher le format de retour attendu
         List<PersonDto> people = coveredPeople
                 .stream()
                 .map(p -> new PersonDto(p.getFirstName(), p.getLastName(), p.getAddress(), p.getPhone()))
                 .toList();
 
-        // initialize adults & children count
+        // init du compte des adultes et enfants
         long adults = 0;
         long children = 0;
-        // iteration on each person to count adults and children
-        for (Person p : coveredPeople) {
-            // retrieve individual medicalRecords
-            MedicalRecord medicalRecord = dataRepository.findMedicalRecordByName(p.getFirstName(), p.getLastName());
-
-            // age management
-            LocalDate today = LocalDate.now();
-            String birthdate = medicalRecord.getBirthdate();
-            int age = AgeCalculator.ageCalculation(birthdate, today);
-            boolean adult = AgeCalculator.isAdult(age);
-            log.debug("FireStation {} : related file of {} {}, {} years old, {}",
-                    stationNumber, p.getFirstName(), p.getLastName(), age, adult ? "adulte" : "enfant");
+        // itération sur chaque personne pour compter adultes et enfants
+        for (Person person : coveredPeople) {
+            // récupération des medicalRecords par personne
+            MedicalRecord medicalRecord = dataRepository.findMedicalRecordByName(person.getFirstName(), person.getLastName());
+            boolean adult = isAdult(stationNumber, person, medicalRecord);
             if (adult) {
                 adults++;
             } else {
@@ -74,5 +66,16 @@ public class FireStationService {
             }
         }
         return new FireStationCoverageDto(people,adults,children);
+    }
+
+    private static boolean isAdult(int stationNumber, Person p, MedicalRecord medicalRecord) {
+        // gestion de l'âge
+        LocalDate today = LocalDate.now();
+        String birthdate = medicalRecord.getBirthdate();
+        int age = AgeCalculator.ageCalculation(birthdate, today);
+        boolean adult = AgeCalculator.isAdult(age);
+        log.debug("FireStation {} : related file of {} {}, {} years old, {}",
+                stationNumber, p.getFirstName(), p.getLastName(), age, adult ? "adulte" : "enfant");
+        return adult;
     }
 }

@@ -4,6 +4,7 @@ import com.safetynetalerte.fr.safetynetAlerts.exception.MedicalRecordNotFoundExc
 import com.safetynetalerte.fr.safetynetAlerts.model.Firestation;
 import com.safetynetalerte.fr.safetynetAlerts.model.MedicalRecord;
 import com.safetynetalerte.fr.safetynetAlerts.model.Person;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 import tools.jackson.databind.ObjectMapper;
 
@@ -17,18 +18,29 @@ public class DataRepository {
 
     private final SafetyNetData data;
 
-    // The JSON file is read only once, when Spring creates the repository at startup
+    // Par défaut pour Spring au démarrage
+    @Autowired
     public DataRepository(ObjectMapper mapper) throws IOException {
+        this(mapper, "/json/data-safetynet.json");
+    }
 
-        // getResourceAsStream looks for the file in the classpath (src/main/resources is copied
-        // to target/classes), so it works from the IDE, from Maven and from a packaged JAR.
-        // The leading "/" means "start from the root of the classpath".
-        // It returns null if the file is not found.
-        // try-with-resources closes the stream automatically, even if an exception is thrown
-        try (InputStream inputStream = getClass().getResourceAsStream("/data-safetynet.json")) {
-
-            // Jackson reads the stream and builds a SafetyNetData object
-            // the attribute names of the class must match the keys of the JSON
+    /**
+     * Ajout du resourcePath en paramètre du constructeur pour avoir le choix du fichier d'entrée
+     * => permet d'implémenter les cas de test
+     * @param mapper
+     * @param resourcePath
+     * @throws IOException
+     */
+    // For tests
+    public DataRepository(ObjectMapper mapper, String resourcePath) throws IOException {
+        // getResourceAsStream cherche le fichier dans le chemin (src/main/resources est copié vers la cible/classe),
+        // fonctionne depuis l'IDE, Maven ou un package JAR
+        try (InputStream inputStream = getClass().getResourceAsStream(resourcePath)) {
+            if (inputStream == null) {
+                throw new IllegalStateException("Fichier de données introuvable : " + resourcePath);
+            }
+            // Jackson lit le stream et construit l'objet SafetyNetData
+            // les attributs doivent correspondre aux éléments clés déclarés dans le JSON
             // (persons, firestations, medicalrecords)
             this.data = mapper.readValue(inputStream, SafetyNetData.class);
         }
