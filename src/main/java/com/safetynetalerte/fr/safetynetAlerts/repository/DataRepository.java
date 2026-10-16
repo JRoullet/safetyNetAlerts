@@ -65,11 +65,27 @@ public class DataRepository {
                 .toList();
     }
 
+    public List<Person> findPeopleByAddress(String address) {
+        return data.getPeople()
+                .stream()
+                .filter(p -> address.contains(p.getAddress()))
+                .toList();
+    }
+
     public MedicalRecord findMedicalRecordByName(String firstName, String lastName) {
     return data.getMedicalRecords()
             .stream()
             .filter(medicalRecord -> firstName.equals(medicalRecord.getFirstName()) && lastName.equals(medicalRecord.getLastName()))
             .findFirst().orElseThrow(() -> new MedicalRecordNotFoundException(firstName, lastName));
+    }
+
+    public List<MedicalRecord> findMedicalRecordsByFamily(List<Person> people) {
+    return data.getMedicalRecords()
+            .stream()
+            .filter(medicalRecord -> people.stream()
+                    .anyMatch(person -> person.getFirstName().equals(medicalRecord.getFirstName())
+                            && person.getLastName().equals(medicalRecord.getLastName())))
+            .toList();
     }
 
 }
