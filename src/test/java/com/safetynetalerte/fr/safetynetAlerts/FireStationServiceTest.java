@@ -101,12 +101,15 @@ class FireStationServiceTest {
     @Test
     @DisplayName("Station inconnue : lève FirestationNotFoundException")
     void getPeopleCoveredByStation_unknownStation_throws() {
+        //given
         when(dataRepository.findAllFirestations())
                 .thenReturn(List.of(firestation(CULVER, 3)));
 
+        //when
         FirestationNotFoundException e = assertThrows(FirestationNotFoundException.class,
                 () -> service.getPeopleCoveredByStation(999));
 
+        //assert
         assertTrue(e.getMessage().contains("999"));
     }
 
@@ -114,13 +117,16 @@ class FireStationServiceTest {
     @Test
     @DisplayName("Station sans habitant : renvoie une liste vide et 0 adulte, 0 enfant")
     void getPeopleCoveredByStation_noPeopleAtAddresses_returnsEmptyResult() {
+        //given
         when(dataRepository.findAllFirestations())
                 .thenReturn(List.of(firestation(CULVER, 3)));
         when(dataRepository.findPeopleByAddresses(Set.of(CULVER)))
                 .thenReturn(List.of());
 
+        //when
         FireStationCoverageDto result = service.getPeopleCoveredByStation(3);
 
+        //assert
         assertTrue(result.people().isEmpty());
         assertEquals(0, result.adultCount());
         assertEquals(0, result.childCount());
@@ -130,13 +136,17 @@ class FireStationServiceTest {
     @Test
     @DisplayName("Personne sans dossier médical : l'exception remonte")
     void getPeopleCoveredByStation_missingMedicalRecord_throws() {
+        //given
         when(dataRepository.findAllFirestations())
                 .thenReturn(List.of(firestation(CULVER, 3)));
         when(dataRepository.findPeopleByAddresses(Set.of(CULVER)))
                 .thenReturn(List.of(john));
+
+        //when
         when(dataRepository.findMedicalRecordByName("John", "Boyd"))
                 .thenThrow(new MedicalRecordNotFoundException("John", "Boyd"));
 
+        //assert
         assertThrows(MedicalRecordNotFoundException.class,
                 () -> service.getPeopleCoveredByStation(3));
     }

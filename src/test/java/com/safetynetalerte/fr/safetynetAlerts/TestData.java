@@ -11,15 +11,10 @@ import java.util.List;
 public final class TestData {
 
     public static final String CULVER = "1509 Culver St";
-    public static final String BINOC = "834 Binoc Ave";
-    public static final String STEPPES = "112 Steppes Pl";
-
     public static final String CITY = "Culver";
     public static final String ZIP = "97451";
-
     // format de birthdate du Json à transmettre
     private static final DateTimeFormatter BIRTHDATE_FORMAT = DateTimeFormatter.ofPattern("MM/dd/yyyy");
-
     public static final List<String> ALLERGIES = List.of("peanut", "shellfish", "aznol");
     public static final List<String> MEDICATIONS = List.of("aznol:350mg", "hydrapermazol:100mg");
 
