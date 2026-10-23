@@ -1,5 +1,6 @@
 package com.safetynetalerte.fr.safetynetAlerts.repository;
 
+import com.safetynetalerte.fr.safetynetAlerts.exception.AddressNotFoundException;
 import com.safetynetalerte.fr.safetynetAlerts.exception.MedicalRecordNotFoundException;
 import com.safetynetalerte.fr.safetynetAlerts.model.Firestation;
 import com.safetynetalerte.fr.safetynetAlerts.model.MedicalRecord;
@@ -65,11 +66,17 @@ public class DataRepository {
                 .toList();
     }
 
+    // Type d'entrée différent spécifique à la requête, plus simple d'aller dans ce sens plutôt que de complexifier en aval les tests p
+    // our s'adapter alors qu'il s'agit juste d'une méthode simple
     public List<Person> findPeopleByAddress(String address) {
-        return data.getPeople()
+        List<Person> people = data.getPeople()
                 .stream()
-                .filter(p -> address.contains(p.getAddress()))
+                .filter(p -> p.getAddress().equals(address))
                 .toList();
+        if (people.isEmpty()) {
+            throw new AddressNotFoundException(address);
+        }
+        return people;
     }
 
     public MedicalRecord findMedicalRecordByName(String firstName, String lastName) {

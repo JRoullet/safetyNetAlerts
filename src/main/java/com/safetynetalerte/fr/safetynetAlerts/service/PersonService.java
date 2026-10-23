@@ -3,6 +3,7 @@ package com.safetynetalerte.fr.safetynetAlerts.service;
 import com.safetynetalerte.fr.safetynetAlerts.dto.ChildAlertDto;
 import com.safetynetalerte.fr.safetynetAlerts.dto.ChildDto;
 import com.safetynetalerte.fr.safetynetAlerts.dto.PersonNameDto;
+import com.safetynetalerte.fr.safetynetAlerts.exception.MedicalRecordNotFoundException;
 import com.safetynetalerte.fr.safetynetAlerts.model.MedicalRecord;
 import com.safetynetalerte.fr.safetynetAlerts.model.Person;
 import com.safetynetalerte.fr.safetynetAlerts.repository.DataRepository;
@@ -58,12 +59,13 @@ public class PersonService {
         List<ChildDto> children = new ArrayList<>();
         List<PersonNameDto> familyMembers = new ArrayList<>();
 
+        // Iteration sur les medical records pour aller chercher la date de naissance d'une personne
         for (Person person : familyList) {
             MedicalRecord record = medicalRecords.stream()
                     .filter(m -> m.getFirstName().equals(person.getFirstName())
                             && m.getLastName().equals(person.getLastName()))
                     .findFirst()
-                    .orElse(null);
+                    .orElseThrow(() -> new MedicalRecordNotFoundException(person.getFirstName(), person.getLastName()));
 
             if (record == null) {
                 log.warn("Aucun dossier médical trouvé pour {} {}",
@@ -75,15 +77,17 @@ public class PersonService {
                     record.getBirthdate(), referenceDate);
 
             if (AgeCalculator.isAdult(age)) {
-                PersonNameDto adult = new PersonNameDto();
-                adult.setFirstName(person.getFirstName());
-                adult.setLastName(person.getLastName());
+                PersonNameDto adult = new PersonNameDto(
+                        person.getFirstName(),
+                        person.getLastName()
+                );
                 familyMembers.add(adult);
             } else {
-                ChildDto child = new ChildDto();
-                child.setFirstName(person.getFirstName());
-                child.setLastName(person.getLastName());
-                child.setAge(age);
+                ChildDto child = new ChildDto(
+                        person.getFirstName(),
+                        person.getLastName(),
+                        age
+                );
                 children.add(child);
             }
         }

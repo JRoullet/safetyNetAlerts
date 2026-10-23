@@ -1,5 +1,6 @@
 package com.safetynetalerte.fr.safetynetAlerts;
 
+import com.safetynetalerte.fr.safetynetAlerts.exception.AddressNotFoundException;
 import com.safetynetalerte.fr.safetynetAlerts.exception.MedicalRecordNotFoundException;
 import com.safetynetalerte.fr.safetynetAlerts.model.Person;
 import com.safetynetalerte.fr.safetynetAlerts.repository.DataRepository;
@@ -104,6 +105,14 @@ public class DataRepositoryTests {
         assertTrue(e.getMessage().contains("Soldat Inconnu"));
     }
 
+    @Test
+    @DisplayName("Une addresse inconnue lève AddressNotFoundException")
+    void findPeopleByAddress_adresseInconnue_leveAddressNotFoundException() throws IOException {
+        DataRepository repository = loadFrom("valid.json");
+        assertThrows(AddressNotFoundException.class,
+                () -> repository.findPeopleByAddress("Unknown St"));
+    }
+
     /**
      *  Tests d'intégration sur le vrai fichier de données
      * @throws IOException
@@ -129,4 +138,6 @@ public class DataRepositoryTests {
         DataRepository repository = new DataRepository(mapper);
         assertEquals(23, repository.findAllMedicalRecords().size());
     }
+
+
 }

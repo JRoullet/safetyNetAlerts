@@ -16,8 +16,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.util.List;
 import java.util.Set;
 
-import static com.safetynetalerte.fr.safetynetAlerts.TestData.firestation;
-import static com.safetynetalerte.fr.safetynetAlerts.TestData.medicalRecordOf;
+import static com.safetynetalerte.fr.safetynetAlerts.TestData.*;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
@@ -25,14 +24,6 @@ import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class FireStationServiceTest {
-
-
-    /**
-     * Addresses
-     */
-    public static final String CULVER = "1509 Culver St";
-    public static final String BINOC = "834 Binoc Ave";
-    public static final String STEPPES = "112 Steppes Pl";
 
     /**
      * Pour le test de FireStationService, on mock le retour du repository, car on teste uniquement le service

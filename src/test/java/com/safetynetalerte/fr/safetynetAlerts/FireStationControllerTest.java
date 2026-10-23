@@ -58,21 +58,33 @@ public class FireStationControllerTest {
     @Test
     @DisplayName("Station inconnue : 404")
     void getPeopleByFireStation_station_Inconnue_retourne404() throws Exception {
+        var ex = new FirestationNotFoundException(999);
+
         when(service.getPeopleCoveredByStation(999))
-                .thenThrow(new FirestationNotFoundException(999));
+                .thenThrow(ex);
 
         mockMvc.perform(get("/firestation").param("stationNumber", "999"))
-                .andExpect(status().isNotFound());
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.message").value(ex.getMessage()));
+
+        verify(service).getPeopleCoveredByStation(999);
+
     }
 
     @Test
     @DisplayName("Dossier médical manquant: 404")
     void getPeopleByFireStation_missingMedicalRecord_retourne404() throws Exception {
+        var ex = new MedicalRecordNotFoundException("John","Boyd");
+
         when(service.getPeopleCoveredByStation(3))
-                .thenThrow(new MedicalRecordNotFoundException("John","Boyd"));
+                .thenThrow(ex);
 
         mockMvc.perform(get("/firestation").param("stationNumber", "3"))
-                .andExpect(status().isNotFound());
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.message").value(ex.getMessage()));
+
+        verify(service).getPeopleCoveredByStation(3);
+
     }
 
     @Test

@@ -25,10 +25,7 @@ public class FireStationService {
         this.dataRepository = dataRepository;
     }
 
-    //TODO
-    // Tester avec postman
-    // TU à implémenter (cas classiques pour la couverture de code)
-    // Tests sur les enpoints (mockmvc)
+
     public FireStationCoverageDto getPeopleCoveredByStation(int stationNumber)  {
 
         // récupération des adresses liées aux firestations
