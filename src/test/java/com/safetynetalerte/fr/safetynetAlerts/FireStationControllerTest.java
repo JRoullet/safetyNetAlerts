@@ -118,7 +118,53 @@ public class FireStationControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(content().contentTypeCompatibleWith("application/json"))
                 .andExpect(jsonPath("$.phoneNumbers.length()").value(2))
-                .andExpect(jsonPath("$.phoneNumbers[0]").value("841-874-6512"));
+                .andExpect(jsonPath("$.phoneNumbers[0]").value("841-874-6512"))
+                .andExpect(jsonPath("$.phoneNumbers[1]").value("841-874-6513"));
+
+        verify(service).getPhoneNumbersCoveredByStation(3);
+    }
+
+    @Test
+    @DisplayName("GET /phoneAlert?firestation=999 : station inconnue, 404 et message")
+    void getPhoneNumbersCoveredByStation_stationInconnue_retourne404() throws Exception {
+        when(service.getPhoneNumbersCoveredByStation(999))
+                .thenThrow(new FirestationNotFoundException(999));
+
+        mockMvc.perform(get("/phoneAlert").param("firestation", "999"))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.message").value("No firestation was found for id : 999"));
+
+        verify(service).getPhoneNumbersCoveredByStation(999);
+    }
+
+    @Test
+    @DisplayName("GET /phoneAlert sans paramètre firestation : 400, service jamais appelé")
+    void getPhoneNumbersCoveredByStation_paramAbsent_retourne400() throws Exception {
+        mockMvc.perform(get("/phoneAlert"))
+                .andExpect(status().isBadRequest());
+
+        verifyNoInteractions(service);
+    }
+
+    @Test
+    @DisplayName("GET /phoneAlert?firestation=abc : paramètre non numérique, 400")
+    void getPhoneNumbersCoveredByStation_paramNonNumerique_retourne400() throws Exception {
+        mockMvc.perform(get("/phoneAlert").param("firestation", "abc"))
+                .andExpect(status().isBadRequest());
+
+        verifyNoInteractions(service);
+    }
+
+    @Test
+    @DisplayName("GET /phoneAlert?firestation=3 : aucun résident, 200 et liste vide")
+    void getPhoneNumbersCoveredByStation_aucunNumero_retourne200ListeVide() throws Exception {
+        when(service.getPhoneNumbersCoveredByStation(3))
+                .thenReturn(new PhoneAlertDto(List.of()));
+
+        mockMvc.perform(get("/phoneAlert").param("firestation", "3"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.phoneNumbers").isArray())
+                .andExpect(jsonPath("$.phoneNumbers").isEmpty());
 
         verify(service).getPhoneNumbersCoveredByStation(3);
     }
