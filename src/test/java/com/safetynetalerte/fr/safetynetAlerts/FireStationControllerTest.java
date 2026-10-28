@@ -3,6 +3,7 @@ package com.safetynetalerte.fr.safetynetAlerts;
 import com.safetynetalerte.fr.safetynetAlerts.controller.FireStationController;
 import com.safetynetalerte.fr.safetynetAlerts.dto.FireStationCoverageDto;
 import com.safetynetalerte.fr.safetynetAlerts.dto.PersonDto;
+import com.safetynetalerte.fr.safetynetAlerts.dto.PhoneAlertDto;
 import com.safetynetalerte.fr.safetynetAlerts.exception.FirestationNotFoundException;
 import com.safetynetalerte.fr.safetynetAlerts.exception.MedicalRecordNotFoundException;
 import com.safetynetalerte.fr.safetynetAlerts.service.FireStationService;
@@ -105,6 +106,21 @@ public class FireStationControllerTest {
 
         verifyNoInteractions(service);
 
+    }
+
+    @Test
+    @DisplayName("GET /phoneAlert?firestation=3 : 200 et numéros attendus")
+    void getPhoneNumbersCoveredByStation_casPassant_retourne200() throws Exception {
+        PhoneAlertDto dto = new PhoneAlertDto(List.of("841-874-6512", "841-874-6513"));
+        when(service.getPhoneNumbersCoveredByStation(3)).thenReturn(dto);
+
+        mockMvc.perform(get("/phoneAlert").param("firestation", "3"))
+                .andExpect(status().isOk())
+                .andExpect(content().contentTypeCompatibleWith("application/json"))
+                .andExpect(jsonPath("$.phoneNumbers.length()").value(2))
+                .andExpect(jsonPath("$.phoneNumbers[0]").value("841-874-6512"));
+
+        verify(service).getPhoneNumbersCoveredByStation(3);
     }
 
 

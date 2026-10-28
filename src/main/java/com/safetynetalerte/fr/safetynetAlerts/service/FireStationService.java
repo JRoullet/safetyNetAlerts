@@ -2,6 +2,7 @@ package com.safetynetalerte.fr.safetynetAlerts.service;
 
 import com.safetynetalerte.fr.safetynetAlerts.dto.FireStationCoverageDto;
 import com.safetynetalerte.fr.safetynetAlerts.dto.PersonDto;
+import com.safetynetalerte.fr.safetynetAlerts.dto.PhoneAlertDto;
 import com.safetynetalerte.fr.safetynetAlerts.exception.FirestationNotFoundException;
 import com.safetynetalerte.fr.safetynetAlerts.model.MedicalRecord;
 import com.safetynetalerte.fr.safetynetAlerts.model.Person;
@@ -12,6 +13,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -28,20 +30,7 @@ public class FireStationService {
 
     public FireStationCoverageDto getPeopleCoveredByStation(int stationNumber)  {
 
-        // récupération des adresses liées aux firestations
-        Set<String> addresses = dataRepository.findAllFirestations()
-                .stream()
-                .filter(fs -> fs.getStation() == stationNumber)
-                .map(fs -> fs.getAddress())
-                .collect(Collectors.toSet());
-        if (addresses.isEmpty()){
-            throw new FirestationNotFoundException(stationNumber);
-        }
-        log.debug("Firestation {} : {} covered adresses", stationNumber, addresses.size());
-
-        // récupération des personnes par addresse
-        List<Person> coveredPeople = dataRepository.findPeopleByAddresses(addresses);
-        log.debug("FireStation {} : {} found people", stationNumber, coveredPeople.size());
+        List<Person> coveredPeople = findPeopleByStation(stationNumber);
 
         // remplissage du dto pour matcher le format de retour attendu
         List<PersonDto> people = coveredPeople
@@ -66,6 +55,29 @@ public class FireStationService {
         return new FireStationCoverageDto(people,adults,children);
     }
 
+    private List<Person> findPeopleByStation(int stationNumber) {
+        // récupération des adresses liées aux firestations
+        Set<String> addresses = getAdressesByStation(stationNumber);
+
+        // récupération des personnes par addresse
+        List<Person> coveredPeople = dataRepository.findPeopleByAddresses(addresses);
+        log.debug("FireStation {} : {} found people", stationNumber, coveredPeople.size());
+        return coveredPeople;
+    }
+
+    private Set<String> getAdressesByStation(int stationNumber) {
+        Set<String> addresses = dataRepository.findAllFirestations()
+                .stream()
+                .filter(fs -> fs.getStation() == stationNumber)
+                .map(fs -> fs.getAddress())
+                .collect(Collectors.toSet());
+        if (addresses.isEmpty()){
+            throw new FirestationNotFoundException(stationNumber);
+        }
+        log.debug("Firestation {} : {} covered adresses", stationNumber, addresses.size());
+        return addresses;
+    }
+
     private static boolean isAdult(int stationNumber, Person p, MedicalRecord medicalRecord) {
         // gestion de l'âge
         LocalDate today = LocalDate.now();
@@ -75,5 +87,18 @@ public class FireStationService {
         log.debug("FireStation {} : related file of {} {}, {} years old, {}",
                 stationNumber, p.getFirstName(), p.getLastName(), age, adult ? "adulte" : "enfant");
         return adult;
+    }
+
+    public PhoneAlertDto getPhoneNumbersCoveredByStation(int stationNumber){
+        List<Person> coveredPeople = findPeopleByStation(stationNumber);
+        List<String> phoneNumbers = coveredPeople
+                .stream()
+                .map(Person::getPhone)
+                .filter(Objects::nonNull)
+                .distinct()
+                .toList();
+
+        log.debug("FireStation {} : {} distinct phone numbers", stationNumber, phoneNumbers.size());
+        return new PhoneAlertDto(phoneNumbers);
     }
 }
