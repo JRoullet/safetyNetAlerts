@@ -17,6 +17,7 @@ public class PersonController {
         this.service = service;
     }
 
+    // Disparition des blocs try/catch pour remonter les exceptions grâce à GlobalExceptionHandler
     @GetMapping("/childAlert")
     public ChildAlertDto getchildrenListByAddress(@RequestParam("address") String address) {
         log.info("GET /childAlert?address={}", address);

@@ -18,7 +18,7 @@ public class FireStationController {
         this.service = service;
     }
 
-    // Disparition des blocs try/catch grâce à GlobalExceptionHandler
+    // Disparition des blocs try/catch pour remonter les exceptions grâce à GlobalExceptionHandler
     @GetMapping("/firestation")
     public FireStationCoverageDto getPeopleByFirestation(@RequestParam("stationNumber") int stationNumber) {
         log.info("GET /firestation?stationNumber={}", stationNumber);

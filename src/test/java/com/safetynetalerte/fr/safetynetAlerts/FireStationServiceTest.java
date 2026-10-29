@@ -1,6 +1,7 @@
 package com.safetynetalerte.fr.safetynetAlerts;
 
 import com.safetynetalerte.fr.safetynetAlerts.dto.FireStationCoverageDto;
+import com.safetynetalerte.fr.safetynetAlerts.dto.PhoneAlertDto;
 import com.safetynetalerte.fr.safetynetAlerts.exception.FirestationNotFoundException;
 import com.safetynetalerte.fr.safetynetAlerts.exception.MedicalRecordNotFoundException;
 import com.safetynetalerte.fr.safetynetAlerts.model.Person;
@@ -17,10 +18,11 @@ import java.util.List;
 import java.util.Set;
 
 import static com.safetynetalerte.fr.safetynetAlerts.TestData.*;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.ArgumentMatchers.anySet;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class FireStationServiceTest {
@@ -141,5 +143,87 @@ class FireStationServiceTest {
         assertThrows(MedicalRecordNotFoundException.class,
                 () -> service.getPeopleCoveredByStation(3));
     }
+
+    @Test
+    @DisplayName("Numéros de plusieurs adresses desservies par la même station")
+    void getPhoneNumbersCoveredByStation_plusieursAdresses_retourneLesNumeros() {
+        // given : la station 3 dessert deux adresses, la station 2 une autre
+        when(dataRepository.findAllFirestations()).thenReturn(List.of(
+                firestation(CULVER, 3),
+                firestation(ROSE, 3),
+                firestation("112 Steppes Pl", 2)));
+
+        // trois résidents, trois numéros différents
+        when(dataRepository.findPeopleByAddresses(Set.of(CULVER, ROSE))).thenReturn(List.of(
+                john(),    // 841-874-6512
+                jacob(),   // 841-874-6513
+                brian())); // 841-874-7784
+
+        // when
+        PhoneAlertDto result = service.getPhoneNumbersCoveredByStation(3);
+
+        // then
+        assertThat(result.phoneNumbers())
+                .containsExactly("841-874-6512", "841-874-6513", "841-874-7784");
+    }
+
+    @Test
+    @DisplayName("Deux personnes avec le même numéro : un seul numéro dans la liste")
+    void getPhoneNumbersCoveredByStation_numerosEnDouble_retourneSansDoublons() {
+        // given
+        when(dataRepository.findAllFirestations()).thenReturn(List.of(firestation(CULVER, 3)));
+        // john et tenley partagent 841-874-6512, jacob a le 841-874-6513
+        when(dataRepository.findPeopleByAddresses(Set.of(CULVER)))
+                .thenReturn(List.of(john(), jacob(), tenley()));
+        // when
+        PhoneAlertDto result = service.getPhoneNumbersCoveredByStation(3);
+
+        // then
+        assertThat(result.phoneNumbers()).containsExactly("841-874-6512", "841-874-6513");
+    }
+
+    @Test
+    @DisplayName("Personne sans numéro de téléphone : ignorée de la liste")
+    void getPhoneNumbersCoveredByStation_numeroNull_estIgnore() {
+        // given
+        Person sansNumero = brian();
+        sansNumero.setPhone(null);
+        when(dataRepository.findAllFirestations()).thenReturn(List.of(firestation(CULVER, 3)));
+        when(dataRepository.findPeopleByAddresses(Set.of(CULVER)))
+                .thenReturn(List.of(john(), sansNumero));
+        // when
+        PhoneAlertDto result = service.getPhoneNumbersCoveredByStation(3);
+
+        // then
+        assertThat(result.phoneNumbers()).containsExactly("841-874-6512");
+    }
+
+    @Test
+    @DisplayName("Station inconnue : FirestationNotFoundException, aucune recherche de personnes")
+    void getPhoneNumbersCoveredByStation_stationInconnue_leveFirestationNotFoundException() {
+        // given
+        when(dataRepository.findAllFirestations()).thenReturn(List.of(firestation(CULVER, 3)));
+        // when
+        FirestationNotFoundException e = assertThrows(FirestationNotFoundException.class,
+                () -> service.getPhoneNumbersCoveredByStation(999));
+        // then
+        assertEquals("No firestation was found for id : 999", e.getMessage());
+        verify(dataRepository, never()).findPeopleByAddresses(anySet());
+    }
+
+    @Test
+    @DisplayName("Station sans habitant : liste vide")
+    void getPhoneNumbersCoveredByStation_aucunHabitant_retourneListeVide() {
+        // given
+        when(dataRepository.findAllFirestations()).thenReturn(List.of(firestation(CULVER, 3)));
+        when(dataRepository.findPeopleByAddresses(Set.of(CULVER))).thenReturn(List.of());
+
+        // when
+        PhoneAlertDto result = service.getPhoneNumbersCoveredByStation(3);
+
+        // then
+        assertThat(result.phoneNumbers()).isEmpty();
+    }
+
 
 }
