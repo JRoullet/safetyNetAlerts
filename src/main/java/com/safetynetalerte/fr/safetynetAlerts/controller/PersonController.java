@@ -1,6 +1,7 @@
 package com.safetynetalerte.fr.safetynetAlerts.controller;
 
 import com.safetynetalerte.fr.safetynetAlerts.dto.ChildAlertDto;
+import com.safetynetalerte.fr.safetynetAlerts.dto.FireAlertDto;
 import com.safetynetalerte.fr.safetynetAlerts.service.PersonService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -26,4 +27,15 @@ public class PersonController {
                 response.children().size(), response.familyMembers().size());
         return response;
     }
+
+    @GetMapping("/fire")
+    public FireAlertDto getFireAlertByAddress(@RequestParam("address") String address) {
+        log.info("GET /fire?address={}", address);
+        FireAlertDto response = service.getFireAlertByAddress(address);
+        log.info("ServiceResponse from controller: station {}, {} residents",
+                response.stationNumber(), response.residents().size());
+        return response;
+    }
+
+
 }

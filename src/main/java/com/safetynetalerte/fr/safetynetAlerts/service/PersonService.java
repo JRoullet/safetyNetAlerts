@@ -2,6 +2,7 @@ package com.safetynetalerte.fr.safetynetAlerts.service;
 
 import com.safetynetalerte.fr.safetynetAlerts.dto.ChildAlertDto;
 import com.safetynetalerte.fr.safetynetAlerts.dto.ChildDto;
+import com.safetynetalerte.fr.safetynetAlerts.dto.FireAlertDto;
 import com.safetynetalerte.fr.safetynetAlerts.dto.PersonNameDto;
 import com.safetynetalerte.fr.safetynetAlerts.exception.MedicalRecordNotFoundException;
 import com.safetynetalerte.fr.safetynetAlerts.model.MedicalRecord;
@@ -102,4 +103,7 @@ public class PersonService {
     }
 
 
+    public FireAlertDto getFireAlertByAddress(String address) {
+        return null;
+    }
 }

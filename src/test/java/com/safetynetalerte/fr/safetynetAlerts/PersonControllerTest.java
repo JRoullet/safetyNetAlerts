@@ -1,10 +1,9 @@
 package com.safetynetalerte.fr.safetynetAlerts;
 
 import com.safetynetalerte.fr.safetynetAlerts.controller.PersonController;
-import com.safetynetalerte.fr.safetynetAlerts.dto.ChildAlertDto;
-import com.safetynetalerte.fr.safetynetAlerts.dto.ChildDto;
-import com.safetynetalerte.fr.safetynetAlerts.dto.PersonNameDto;
+import com.safetynetalerte.fr.safetynetAlerts.dto.*;
 import com.safetynetalerte.fr.safetynetAlerts.exception.AddressNotFoundException;
+import com.safetynetalerte.fr.safetynetAlerts.exception.FirestationNotFoundException;
 import com.safetynetalerte.fr.safetynetAlerts.exception.MedicalRecordNotFoundException;
 import com.safetynetalerte.fr.safetynetAlerts.service.PersonService;
 import org.junit.jupiter.api.DisplayName;
@@ -128,6 +127,77 @@ public class PersonControllerTest {
                 .andExpect(jsonPath("$.message").value("Missing medical record for : Shawna Stelzer"));
 
         verify(service).getChildrenByaddress(ROSE);
+    }
+
+    @Test
+    @DisplayName("GET /fire : plusieurs habitants, chacun avec son téléphone et ses antécédents")
+    void getFireAlertByAddress_plusieursHabitants_retourne200() throws Exception {
+        ResidentDto kendrik = new ResidentDto("Kendrik", "Stelzer", "841-874-7784", 12,
+                List.of("aznol:350mg"), List.of("peanut"));
+        ResidentDto brian = new ResidentDto("Brian", "Stelzer", "841-874-7785", 40,
+                List.of(), List.of());
+        when(service.getFireAlertByAddress(ROSE))
+                .thenReturn(new FireAlertDto(3, List.of(kendrik, brian)));
+
+        mockMvc.perform(get("/fire").param("address", ROSE))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.stationNumber").value(3))
+                .andExpect(jsonPath("$.residents.length()").value(2))
+                .andExpect(jsonPath("$.residents[1].firstName").value("Brian"))
+                .andExpect(jsonPath("$.residents[1].phone").value("841-874-7785"))
+                .andExpect(jsonPath("$.residents[1].age").value(40))
+                .andExpect(jsonPath("$.residents[1].medications").isArray())
+                .andExpect(jsonPath("$.residents[1].medications").isEmpty())
+                .andExpect(jsonPath("$.residents[1].allergies").isEmpty());
+    }
+
+    @Test
+    @DisplayName("GET /fire sans paramètre address : 400, service jamais appelé")
+    void getFireAlertByAddress_addressAbsent_retourne400() throws Exception {
+        mockMvc.perform(get("/fire"))
+                .andExpect(status().isBadRequest());
+
+        verifyNoInteractions(service);
+    }
+
+    @Test
+    @DisplayName("GET /fire?address=inconnue : adresse sans habitant, 404 et message")
+    void getFireAlertByAddress_adresseInconnue_retourne404() throws Exception {
+        when(service.getFireAlertByAddress("Unknown St"))
+                .thenThrow(new AddressNotFoundException("Unknown St"));
+
+        mockMvc.perform(get("/fire").param("address", "Unknown St"))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.message").value("No address was found at : Unknown St"));
+
+        verify(service).getFireAlertByAddress("Unknown St");
+    }
+
+    @Test
+    @DisplayName("GET /fire : adresse sans caserne, 404 et message")
+    void getFireAlertByAddress_aucuneCaserne_retourne404() throws Exception {
+        when(service.getFireAlertByAddress(ROSE))
+                .thenThrow(new FirestationNotFoundException(ROSE));
+
+        mockMvc.perform(get("/fire").param("address", ROSE))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.message")
+                        .value("No firestation was found for address : " + ROSE));
+
+        verify(service).getFireAlertByAddress(ROSE);
+    }
+
+    @Test
+    @DisplayName("GET /fire : dossier médical manquant, 404 et message")
+    void getFireAlertByAddress_dossierMedicalManquant_retourne404() throws Exception {
+        when(service.getFireAlertByAddress(ROSE))
+                .thenThrow(new MedicalRecordNotFoundException("Shawna", "Stelzer"));
+
+        mockMvc.perform(get("/fire").param("address", ROSE))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.message").value("Missing medical record for : Shawna Stelzer"));
+
+        verify(service).getFireAlertByAddress(ROSE);
     }
 
 }
