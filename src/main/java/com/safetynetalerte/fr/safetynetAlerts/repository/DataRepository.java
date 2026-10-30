@@ -1,6 +1,7 @@
 package com.safetynetalerte.fr.safetynetAlerts.repository;
 
 import com.safetynetalerte.fr.safetynetAlerts.exception.AddressNotFoundException;
+import com.safetynetalerte.fr.safetynetAlerts.exception.FirestationNotFoundException;
 import com.safetynetalerte.fr.safetynetAlerts.exception.MedicalRecordNotFoundException;
 import com.safetynetalerte.fr.safetynetAlerts.model.Firestation;
 import com.safetynetalerte.fr.safetynetAlerts.model.MedicalRecord;
@@ -95,4 +96,11 @@ public class DataRepository {
             .toList();
     }
 
+    public Firestation findFirestationByAddress(String address) {
+        return data.getFirestations()
+                .stream()
+                .filter(fs -> address.equals(fs.getAddress()))
+                .findFirst()
+                .orElseThrow(() -> new FirestationNotFoundException(address));
+    }
 }

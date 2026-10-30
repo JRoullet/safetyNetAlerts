@@ -1,7 +1,9 @@
 package com.safetynetalerte.fr.safetynetAlerts;
 
 import com.safetynetalerte.fr.safetynetAlerts.exception.AddressNotFoundException;
+import com.safetynetalerte.fr.safetynetAlerts.exception.FirestationNotFoundException;
 import com.safetynetalerte.fr.safetynetAlerts.exception.MedicalRecordNotFoundException;
+import com.safetynetalerte.fr.safetynetAlerts.model.Firestation;
 import com.safetynetalerte.fr.safetynetAlerts.model.Person;
 import com.safetynetalerte.fr.safetynetAlerts.repository.DataRepository;
 import org.junit.jupiter.api.DisplayName;
@@ -113,6 +115,14 @@ public class DataRepositoryTests {
                 () -> repository.findPeopleByAddress("Unknown St"));
     }
 
+    @Test
+    @DisplayName("findPeopleByAddress : adresse partielle ou différente, pas de correspondance")
+    void findPeopleByAddress_adressePartielle_leveAddressNotFoundException() throws IOException {
+        DataRepository repository = loadFrom("valid.json");
+        assertThrows(AddressNotFoundException.class,
+                () -> repository.findPeopleByAddress("1509 Culver St Paris"));
+    }
+
     /**
      *  Tests d'intégration sur le vrai fichier de données
      * @throws IOException
@@ -137,6 +147,43 @@ public class DataRepositoryTests {
     void realFile_contains23MedicalRecords() throws IOException {
         DataRepository repository = new DataRepository(mapper);
         assertEquals(23, repository.findAllMedicalRecords().size());
+    }
+
+    /**
+     * firestationByAddress
+     * @throws IOException
+     */
+    @Test
+    @DisplayName("findFirestationByAddress : adresse connue, retourne la caserne")
+    void findFirestationByAddress_adresseConnue_retourneLaCaserne() throws IOException {
+        DataRepository repository = new DataRepository(mapper);
+
+        Firestation firestation = repository.findFirestationByAddress("1509 Culver St");
+
+        assertEquals(3, firestation.getStation());
+        assertEquals("1509 Culver St", firestation.getAddress());
+    }
+
+    @Test
+    @DisplayName("findFirestationByAddress : adresse inconnue, FirestationNotFoundException")
+    void findFirestationByAddress_adresseInconnue_leveFirestationNotFoundException() throws IOException {
+        DataRepository repository = new DataRepository(mapper);
+
+        FirestationNotFoundException e = assertThrows(FirestationNotFoundException.class,
+                () -> repository.findFirestationByAddress("Unknown St"));
+
+        assertEquals("No firestation was found for address : Unknown St", e.getMessage());
+    }
+
+    @Test
+    @DisplayName("findFirestationByAddress : adresse partielle ou différente, pas de correspondance")
+    void findFirestationByAddress_adressePartielle_leveFirestationNotFoundException() throws IOException {
+        DataRepository repository = new DataRepository(mapper);
+
+        assertThrows(FirestationNotFoundException.class,
+                () -> repository.findFirestationByAddress("Culver"));
+        assertThrows(FirestationNotFoundException.class,
+                () -> repository.findFirestationByAddress("1509 Culver St Paris"));
     }
 
 
