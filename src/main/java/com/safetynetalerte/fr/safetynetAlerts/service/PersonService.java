@@ -1,9 +1,6 @@
 package com.safetynetalerte.fr.safetynetAlerts.service;
 
-import com.safetynetalerte.fr.safetynetAlerts.dto.ChildAlertDto;
-import com.safetynetalerte.fr.safetynetAlerts.dto.ChildDto;
-import com.safetynetalerte.fr.safetynetAlerts.dto.FireAlertDto;
-import com.safetynetalerte.fr.safetynetAlerts.dto.PersonNameDto;
+import com.safetynetalerte.fr.safetynetAlerts.dto.*;
 import com.safetynetalerte.fr.safetynetAlerts.exception.MedicalRecordNotFoundException;
 import com.safetynetalerte.fr.safetynetAlerts.model.MedicalRecord;
 import com.safetynetalerte.fr.safetynetAlerts.model.Person;
@@ -104,6 +101,25 @@ public class PersonService {
 
 
     public FireAlertDto getFireAlertByAddress(String address) {
-        return null;
+        int stationNumber = dataRepository.findFirestationByAddress(address).getStation();
+        List<Person> people = dataRepository.findPeopleByAddress(address);
+
+        // On veut effectuer le calcul de l'âge dans le service, au moment où on fait l'appel
+        LocalDate today = LocalDate.now();
+
+        List<ResidentDto> residents = people.stream()
+                .map(person -> toResidentDto(person, today))
+                .toList();
+
+        return new FireAlertDto(stationNumber, residents);
+    }
+
+
+    private ResidentDto toResidentDto(Person person, LocalDate referenceDate) {
+        MedicalRecord record = dataRepository.findMedicalRecordByName(
+                person.getFirstName(), person.getLastName());
+        int age = AgeCalculator.ageCalculation(record.getBirthdate(), referenceDate);
+        return new ResidentDto(person.getFirstName(), person.getLastName(), person.getPhone(),
+                age, record.getMedications(), record.getAllergies());
     }
 }

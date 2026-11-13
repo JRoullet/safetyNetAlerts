@@ -2,7 +2,10 @@ package com.safetynetalerte.fr.safetynetAlerts;
 
 import com.safetynetalerte.fr.safetynetAlerts.dto.ChildAlertDto;
 import com.safetynetalerte.fr.safetynetAlerts.dto.ChildDto;
+import com.safetynetalerte.fr.safetynetAlerts.dto.FireAlertDto;
+import com.safetynetalerte.fr.safetynetAlerts.dto.ResidentDto;
 import com.safetynetalerte.fr.safetynetAlerts.exception.AddressNotFoundException;
+import com.safetynetalerte.fr.safetynetAlerts.exception.FirestationNotFoundException;
 import com.safetynetalerte.fr.safetynetAlerts.exception.MedicalRecordNotFoundException;
 import com.safetynetalerte.fr.safetynetAlerts.model.MedicalRecord;
 import com.safetynetalerte.fr.safetynetAlerts.model.Person;
@@ -19,7 +22,7 @@ import java.util.List;
 
 import static com.safetynetalerte.fr.safetynetAlerts.TestData.*;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.Mockito.*;
@@ -129,5 +132,65 @@ class PersonServiceTest {
                 () -> service.getChildrenByaddress("Unknown St"));
 
         verify(dataRepository, never()).findMedicalRecordsByFamily(anyList());
+    }
+
+    @Test
+    @DisplayName("Adresse connue : renvoie la caserne et la liste des résidents")
+    void getFireAlertByAddress_adresseConnue_retourneCaserneEtResidents() {
+        Person kendrik = kendrik(), brian = brian();
+        when(dataRepository.findFirestationByAddress(ROSE)).thenReturn(firestation(ROSE, 3));
+        when(dataRepository.findPeopleByAddress(ROSE)).thenReturn(List.of(kendrik, brian));
+        when(dataRepository.findMedicalRecordByName("Kendrik", "Stelzer"))
+                .thenReturn(medicalRecordOf(kendrik, 12));
+        when(dataRepository.findMedicalRecordByName("Brian", "Stelzer"))
+                .thenReturn(medicalRecordOf(brian, 40));
+
+        FireAlertDto result = service.getFireAlertByAddress(ROSE);
+
+        assertEquals(3, result.stationNumber());
+        assertThat(result.residents()).containsExactly(
+                new ResidentDto("Kendrik", "Stelzer", kendrik.getPhone(), 12, MEDICATIONS, ALLERGIES),
+                new ResidentDto("Brian", "Stelzer", brian.getPhone(), 40, MEDICATIONS, ALLERGIES));
+    }
+
+    @Test
+    @DisplayName("Adresse sans caserne : FirestationNotFoundException, aucune autre recherche")
+    void getFireAlertByAddress_aucuneCaserne_leveFirestationNotFoundException() {
+        when(dataRepository.findFirestationByAddress("Unknown St"))
+                .thenThrow(new FirestationNotFoundException("Unknown St"));
+
+        FirestationNotFoundException e = assertThrows(FirestationNotFoundException.class,
+                () -> service.getFireAlertByAddress("Unknown St"));
+
+        assertEquals("No firestation was found for address : Unknown St", e.getMessage());
+        verify(dataRepository).findFirestationByAddress("Unknown St");
+        verifyNoMoreInteractions(dataRepository);
+    }
+
+    @Test
+    @DisplayName("Adresse avec caserne mais sans habitant : AddressNotFoundException, aucun dossier cherché")
+    void getFireAlertByAddress_aucunHabitant_leveAddressNotFoundException() {
+        when(dataRepository.findFirestationByAddress(ROSE)).thenReturn(firestation(ROSE, 3));
+        when(dataRepository.findPeopleByAddress(ROSE))
+                .thenThrow(new AddressNotFoundException(ROSE));
+
+        assertThrows(AddressNotFoundException.class,
+                () -> service.getFireAlertByAddress(ROSE));
+
+        verify(dataRepository, never()).findMedicalRecordByName(anyString(), anyString());
+    }
+
+    @Test
+    @DisplayName("Dossier médical manquant : MedicalRecordNotFoundException")
+    void getFireAlertByAddress_dossierMedicalManquant_leveMedicalRecordNotFoundException() {
+        when(dataRepository.findFirestationByAddress(ROSE)).thenReturn(firestation(ROSE, 3));
+        when(dataRepository.findPeopleByAddress(ROSE)).thenReturn(List.of(shawna()));
+        when(dataRepository.findMedicalRecordByName("Shawna", "Stelzer"))
+                .thenThrow(new MedicalRecordNotFoundException("Shawna", "Stelzer"));
+
+        MedicalRecordNotFoundException e = assertThrows(MedicalRecordNotFoundException.class,
+                () -> service.getFireAlertByAddress(ROSE));
+
+        assertEquals("Missing medical record for : Shawna Stelzer", e.getMessage());
     }
 }

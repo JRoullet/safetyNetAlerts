@@ -162,7 +162,7 @@ public class PersonControllerTest {
 
     @Test
     @DisplayName("GET /fire?address=inconnue : adresse sans habitant, 404 et message")
-    void getFireAlertByAddress_adresseInconnue_retourne404() throws Exception {
+    void getFireAlertByAddress_adresseSansHabitant_retourne404() throws Exception {
         when(service.getFireAlertByAddress("Unknown St"))
                 .thenThrow(new AddressNotFoundException("Unknown St"));
 
