@@ -4,6 +4,7 @@ import com.safetynetalerte.fr.safetynetAlerts.exception.AddressNotFoundException
 import com.safetynetalerte.fr.safetynetAlerts.exception.FirestationNotFoundException;
 import com.safetynetalerte.fr.safetynetAlerts.exception.MedicalRecordNotFoundException;
 import com.safetynetalerte.fr.safetynetAlerts.model.Firestation;
+import com.safetynetalerte.fr.safetynetAlerts.model.MedicalRecord;
 import com.safetynetalerte.fr.safetynetAlerts.model.Person;
 import com.safetynetalerte.fr.safetynetAlerts.repository.DataRepository;
 import org.junit.jupiter.api.DisplayName;
@@ -12,7 +13,11 @@ import tools.jackson.core.JacksonException;
 import tools.jackson.databind.ObjectMapper;
 
 import java.io.IOException;
+import java.util.List;
+import java.util.Set;
 
+import static com.safetynetalerte.fr.safetynetAlerts.TestData.*;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class DataRepositoryTests {
@@ -184,6 +189,91 @@ public class DataRepositoryTests {
                 () -> repository.findFirestationByAddress("Culver"));
         assertThrows(FirestationNotFoundException.class,
                 () -> repository.findFirestationByAddress("1509 Culver St Paris"));
+    }
+
+    @Test
+    @DisplayName("findPeopleByAddress : adresse connue, retourne uniquement les habitants de cette adresse")
+    void findPeopleByAddress_adresseConnue_retourneLesHabitants() throws IOException {
+        DataRepository repository = new DataRepository(mapper);
+        List<Person> people = repository.findPeopleByAddress(CULVER);
+
+        assertThat(people).isNotEmpty();
+        assertThat(people).allMatch(p -> CULVER.equals(p.getAddress()));
+        assertThat(people).extracting(Person::getFirstName).contains("John", "Jacob", "Tenley");
+    }
+
+    @Test
+    @DisplayName("findPeopleByAddresses : plusieurs adresses, habitants de chacune")
+    void findPeopleByAddresses_plusieursAdresses_retourneLesHabitantsDeChacune() throws IOException {
+        DataRepository repository = new DataRepository(mapper);
+
+        Set<String> addresses = Set.of(CULVER, ROSE);
+
+        List<Person> people = repository.findPeopleByAddresses(addresses);
+
+        assertThat(people).allMatch(p -> addresses.contains(p.getAddress()));
+        assertThat(people).extracting(Person::getFirstName).contains("John", "Brian");
+    }
+
+    @Test
+    @DisplayName("findPeopleByAddresses : une seule adresse, uniquement ses habitants")
+    void findPeopleByAddresses_uneAdresse_retourneSesHabitants() throws IOException {
+        DataRepository repository = new DataRepository(mapper);
+
+        List<Person> people = repository.findPeopleByAddresses(Set.of(ROSE));
+
+        assertThat(people).isNotEmpty();
+        assertThat(people).extracting(Person::getLastName).containsOnly("Stelzer");
+    }
+
+    @Test
+    @DisplayName("findPeopleByAddresses : adresse inconnue ou ensemble vide, liste vide sans exception")
+    void findPeopleByAddresses_aucuneCorrespondance_retourneListeVide() throws IOException {
+        DataRepository repository = new DataRepository(mapper);
+
+        assertThat(repository.findPeopleByAddresses(Set.of("Unknown St"))).isEmpty();
+        assertThat(repository.findPeopleByAddresses(Set.of())).isEmpty();
+    }
+
+    @Test
+    @DisplayName("findMedicalRecordsByFamily : retourne les dossiers des membres de la liste")
+    void findMedicalRecordsByFamily_famille_retourneLesDossiersDesMembres() throws IOException {
+        DataRepository repository = new DataRepository(mapper);
+        List<MedicalRecord> records = repository.findMedicalRecordsByFamily(List.of(john(), tenley()));
+
+        assertThat(records).extracting(MedicalRecord::getFirstName)
+                .containsExactlyInAnyOrder("John", "Tenley");
+    }
+
+    @Test
+    @DisplayName("findMedicalRecordsByFamily : personne sans dossier, ignorée")
+    void findMedicalRecordsByFamily_personneSansDossier_estIgnoree() throws IOException {
+        DataRepository repository = new DataRepository(mapper);
+
+        Person nobody = person("Nobody", "Nowhere", CULVER);
+
+        List<MedicalRecord> records = repository.findMedicalRecordsByFamily(List.of(john(), nobody));
+
+        assertThat(records).extracting(MedicalRecord::getFirstName).containsExactly("John");
+    }
+
+    @Test
+    @DisplayName("findMedicalRecordsByFamily : le prénom ET le nom doivent correspondre")
+    void findMedicalRecordsByFamily_nomOuPrenomSeul_neCorrespondPas() throws IOException {
+        DataRepository repository = new DataRepository(mapper);
+
+        Person memePrenom = person("John", "Unknown", CULVER);
+        Person memeNom = person("Unknown", "Boyd", CULVER);
+
+        assertThat(repository.findMedicalRecordsByFamily(List.of(memePrenom, memeNom))).isEmpty();
+    }
+
+    @Test
+    @DisplayName("findMedicalRecordsByFamily : liste vide, aucun dossier")
+    void findMedicalRecordsByFamily_listeVide_retourneListeVide() throws IOException {
+        DataRepository repository = new DataRepository(mapper);
+
+        assertThat(repository.findMedicalRecordsByFamily(List.of())).isEmpty();
     }
 
 
